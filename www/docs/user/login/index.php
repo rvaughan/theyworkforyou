@@ -119,6 +119,11 @@ function display_page( $errors=array() ) {
     $PAGE->login_form($errors);
 
 
+    $login = new \MySociety\TheyWorkForYou\FacebookLogin();
+
+    echo '<a href="' . htmlspecialchars($login->getloginURL()) . '">Log in with Facebook!</a>';
+
+
     $PAGE->stripe_end(array(
         array (
             'type' => 'include',

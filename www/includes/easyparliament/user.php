@@ -70,6 +70,7 @@ class USER {
     public $optin = "";            // boolean - Do they want emails from us?
     public $deleted = "";          // User can't log in or have their info displayed.
     public $confirmed = '';        // boolean - Has the user confirmed via email?
+    public $facebook_id = '';      // Facebook ID for users who login with FB
     // Don't use the status to check access privileges - use the is_able_to() function.
     public $status = "Viewer";
 
@@ -120,6 +121,7 @@ class USER {
             $this->email                = $q->field(0,"email");
             $this->emailpublic = $q->field(0,"emailpublic") == 1 ? true : false;
             $this->postcode             = $q->field(0,"postcode");
+            $this->facebook_id          = $q->field(0,"fb_id");
             $this->url                  = $q->field(0,"url");
             $this->lastvisit            = $q->field(0,"lastvisit");
             $this->registrationtoken    = $q->field(0, 'registrationtoken');
@@ -633,6 +635,7 @@ class USER {
     public function postcode() { return $this->postcode; }
     public function url() { return $this->url; }
     public function lastvisit() { return $this->lastvisit; }
+    public function facebook_id() { return $this->facebook_id; }
 
     public function registrationtime() { return $this->registrationtime; }
     public function registrationip() { return $this->registrationip; }
@@ -1005,8 +1008,13 @@ class THEUSER extends USER {
         // user. We don't want it hanging around as it causes confusion.
         $this->unset_postcode_cookie();
 
-        // Reminder: $this->password is actually a hashed version of the plaintext pw.
-        $cookie = $this->user_id() . "." . md5 ($this->password());
+        if ($this->facebook_id()) {
+          // facebook login users probably don't have a password
+          $cookie = $this->user_id() . "." . md5 ($this->facebook_id());
+        } else {
+          // Reminder: $this->password is actually a hashed version of the plaintext pw.
+          $cookie = $this->user_id() . "." . md5 ($this->password());
+        }
 
         if ($expire == 'never') {
             header("Location: $returl");
@@ -1186,6 +1194,63 @@ class THEUSER extends USER {
         } else {
             // Couldn't find this user in the DB. Maybe the token was
             // wrong or incomplete?
+            return false;
+        }
+    }
+
+    public function confirm_without_token() {
+        // If we want to confirm login without a token, e.g. during
+        // Facebook registration
+        //
+        // Note that this doesn't login or redirect the user.
+
+        twfy_debug("THEUSER", "Confirming user without token: " . $this->user_id());
+        $q = $this->db->query("SELECT email, password, postcode
+                        FROM    users
+                        WHERE   user_id = :user_id
+                        ", array(
+                            ':user_id' => $this->user_id,
+                        ));
+
+        if ($q->rows() == 1) {
+
+            twfy_debug("THEUSER", "User with ID found to confirm: " . $this->user_id());
+            // We'll need these to be set before logging the user in.
+            $this->email    = $q->field(0, 'email');
+
+            // Set that they're confirmed in the DB.
+            $r = $this->db->query("UPDATE users
+                            SET     confirmed = '1'
+                            WHERE   user_id = :user_id
+                            ", array(':user_id' => $this->user_id));
+
+            if ($q->field(0, 'postcode')) {
+                try {
+                    $MEMBER = new MEMBER(array('postcode'=>$q->field(0, 'postcode'), 'house'=>1));
+                    $pid = $MEMBER->person_id();
+                    # This should probably be in the ALERT class
+                    $this->db->query('update alerts set confirmed=1 where email = :email and criteria = :criteria', array(
+                            ':email' => $this->email,
+                            ':criteria' => 'speaker:' . $pid
+                        ));
+                } catch (MySociety\TheyWorkForYou\MemberException $e) {
+                }
+            }
+
+            if ($r->success()) {
+                twfy_debug("THEUSER", "User with ID confirmed: " . $this->user_id());
+                $this->confirmed = true;
+                return true;
+            } else {
+                twfy_debug("THEUSER", "User with ID not confirmed: " . $this->user_id());
+                // Couldn't set them as confirmed in the DB.
+                return false;
+            }
+
+        } else {
+            // Couldn't find this user in the DB. Maybe the token was
+            // wrong or incomplete?
+            twfy_debug("THEUSER", "User with ID not found to confirm: " . $this->user_id());
             return false;
         }
     }

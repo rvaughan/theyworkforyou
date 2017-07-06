@@ -296,6 +296,22 @@ class USER {
         }
     }
 
+    public function add_facebook_id($facebook_id) {
+        $q = $this->db->query ("UPDATE users SET facebook_id = :facebook_id WHERE email = :email",
+            array(
+                ':facebook_id' => $facebook_id,
+                ':email' => $this->email
+            ));
+
+        if ($q->success()) {
+            $this->facebook_id = $facebook_id;
+
+            return $facebook_id;
+        } else {
+            return false;
+        }
+    }
+
     public function send_email_confirmation_email($details) {
         // A brief check of the facts...
         if (!is_numeric($this->user_id) ||

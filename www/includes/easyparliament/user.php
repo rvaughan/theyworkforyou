@@ -105,7 +105,9 @@ class USER {
                                 optin,
                                 status,
                                 deleted,
-                                confirmed
+                                confirmed,
+                                facebook_id,
+                                facebook_token
                         FROM    users
                         WHERE   user_id = :user_id",
                         array(':user_id' => $user_id));
@@ -121,7 +123,8 @@ class USER {
             $this->email                = $q->field(0,"email");
             $this->emailpublic = $q->field(0,"emailpublic") == 1 ? true : false;
             $this->postcode             = $q->field(0,"postcode");
-            $this->facebook_id          = $q->field(0,"fb_id");
+            $this->facebook_id          = $q->field(0,"facebook_id");
+            $this->facebook_token       = $q->field(0,"facebook_token");
             $this->url                  = $q->field(0,"url");
             $this->lastvisit            = $q->field(0,"lastvisit");
             $this->registrationtoken    = $q->field(0, 'registrationtoken');
@@ -171,6 +174,10 @@ class USER {
             $details["status"] = "User";
         }
 
+        if (!isset($details["facebook_id"])) {
+            $details["facebook_id"] = "";
+        }
+
         $optin = $details["optin"] == true ? 1 : 0;
 
         $emailpublic = $details["emailpublic"] == true ? 1 : 0;
@@ -187,6 +194,7 @@ class USER {
                 status,
                 registrationtime,
                 registrationip,
+                facebook_id,
                 deleted
             ) VALUES (
                 :firstname,
@@ -200,6 +208,7 @@ class USER {
                 :status,
                 :registrationtime,
                 :registrationip,
+                :facebook_id,
                 '0'
             )
         ", array(
@@ -213,6 +222,7 @@ class USER {
             ':optin' => $optin,
             ':status' => $details["status"],
             ':registrationtime' => $registrationtime,
+            ':facebook_id' => $details["facebook_id"],
             ':registrationip' => $REMOTE_ADDR
         ));
 
@@ -222,6 +232,7 @@ class USER {
             // send them an email. So this may not be required.
             $this->user_id = $q->insert_id();
             $this->password = $passwordforDB;
+            $this->facebook_id = $details["facebook_id"];
 
             // We have to set the user's registration token.
             // This will be sent to them via email, so we can confirm they exist.
@@ -636,6 +647,7 @@ class USER {
     public function url() { return $this->url; }
     public function lastvisit() { return $this->lastvisit; }
     public function facebook_id() { return $this->facebook_id; }
+    public function facebook_token() { return $this->facebook_token; }
 
     public function registrationtime() { return $this->registrationtime; }
     public function registrationip() { return $this->registrationip; }

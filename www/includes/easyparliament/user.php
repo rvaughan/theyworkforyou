@@ -1130,6 +1130,12 @@ class THEUSER extends USER {
             header("Location: $returl");
             setcookie('epuser_id', '', time() - 86400, '/', COOKIEDOMAIN);
         }
+
+        if (get_cookie_var("facebook_id") != "") {
+            // They're logged in, so set the cookie to empty.
+            header("Location: $returl");
+            setcookie('facebook_id', '', time() - 86400, '/', COOKIEDOMAIN);
+        }
     }
 
     public function confirm_email($token, $redirect=true) {

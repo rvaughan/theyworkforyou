@@ -16,6 +16,9 @@ include_once '../../../includes/easyparliament/init.php';
 include_once '../../../includes/easyparliament/page.php';
 $login = new \MySociety\TheyWorkForYou\FacebookLogin();
 
+# used by the facebook login code for CSRF tokens
+session_start();
+
 global $this_page, $DATA;
 
 $this_page = 'topic';

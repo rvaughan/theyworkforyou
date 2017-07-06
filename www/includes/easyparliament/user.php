@@ -1103,11 +1103,19 @@ class THEUSER extends USER {
         // user. We don't want it hanging around as it causes confusion.
         $this->unset_postcode_cookie();
 
+        twfy_debug("THEUSER", "expire is " . $expire);
+
         if ($expire == 'never') {
             header("Location: $returl");
+            twfy_debug("THEUSER", "cookie never expires");
             setcookie($cookie_name, $cookie, time()+86400*365*20, '/', COOKIEDOMAIN);
+        } elseif (is_int($expire) && $expire > time()) {
+            header("Location: $returl");
+            twfy_debug("THEUSER", "cookie expires at " . $expire);
+            setcookie($cookie_name, $cookie, $expire, '/', COOKIEDOMAIN);
         } else {
             header("Location: $returl");
+            twfy_debug("THEUSER", "cookie expires with session");
             setcookie($cookie_name, $cookie, 0, '/', COOKIEDOMAIN);
         }
     }

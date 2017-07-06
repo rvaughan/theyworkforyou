@@ -77,6 +77,8 @@ class FacebookLogin {
         $user = $this->getFacebookUser($accessToken);
 
         $user_id = $THEUSER->email_exists($user['email'], true);
+        $expires = intval($accessToken->getExpiresAt()->format('U'));
+        twfy_debug("THEUSER", "Facebook access token expires at " . $expires);
 
         if ($user_id) {
             twfy_debug("THEUSER", "Faceook user exists in the database: " . $user_id);
@@ -86,11 +88,11 @@ class FacebookLogin {
                 $THEUSER->add_facebook_id($user['id']);
             }
             twfy_debug("THEUSER", "inited user has id : " . $THEUSER->user_id());
-            $THEUSER->facebook_login("/", "never", $accessToken);
+            $THEUSER->facebook_login("/", $expires, $accessToken);
         } else {
             twfy_debug("THEUSER", "Faceook user does not exist in the database");
             $success = $this->createUser($accessToken, $user);
-            $THEUSER->facebook_login("/", "never", $accessToken);
+            $THEUSER->facebook_login("/", $expires, $accessToken);
         }
 
         return false;

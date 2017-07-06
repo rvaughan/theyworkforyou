@@ -835,6 +835,8 @@ class THEUSER extends USER {
 
         $this->db = new ParlDB;
 
+        $facebook_login = False;
+
         // We look at the user's cookie and see if it's valid.
         // If so, we're going to log them in.
 
@@ -846,6 +848,14 @@ class THEUSER extends USER {
         // it is overkill? Whatever, it works.)
 
         $cookie = get_cookie_var("epuser_id"); // In includes/utility.php.
+
+        if ($cookie == '') {
+            $cookie = get_cookie_var("facebook_id");
+            if ($cookie != '') {
+              $facebook_login = True;
+              twfy_debug("THEUSER", "is facebook login");
+            }
+        }
 
         if ($cookie == '') {
             twfy_debug("THEUSER init FAILED", "No cookie set");
@@ -863,24 +873,37 @@ class THEUSER extends USER {
                     // But we need to check the password before we log them in.
                     // And make sure the user hasn't been "deleted".
 
-                    if (md5($this->password()) == $matches[2] && $this->deleted() == false) {
-                        // The correct password is in the cookie,
-                        // and the user isn't deleted, so set the user to be logged in.
-
-                        // This would be an appropriate place to call other functions
-                        // that might set user info that only a logged-in user is going
-                        // to need. Their preferences and saved things or something.
-
-
-                        twfy_debug ("THEUSER init SUCCEEDED", "setting as logged in");
-                        $this->loggedin = true;
-
-                    } elseif (md5 ($this->password()) != $matches[2]) {
-                        twfy_debug ("THEUSER init FAILED", "Password doesn't match cookie");
-                        $this->loggedin = false;
+                    if ($facebook_login) {
+                      if (md5($this->facebook_token()) == $matches[2] && $this->deleted() == false) {
+                          twfy_debug ("THEUSER", "init SUCCESS: setting as logged in");
+                          $this->loggedin = true;
+                      } elseif (md5 ($this->facebook_token()) != $matches[2]) {
+                          twfy_debug ("THEUSER", "init FAILED: Facebook token doesn't match cookie");
+                          $this->loggedin = false;
+                      } else {
+                          twfy_debug ("THEUSER", "init FAILED: User is deleted");
+                          $this->loggedin = false;
+                      }
                     } else {
-                        twfy_debug ("THEUSER init FAILED", "User is deleted");
-                        $this->loggedin = false;
+                      if (md5($this->password()) == $matches[2] && $this->deleted() == false) {
+                          // The correct password is in the cookie,
+                          // and the user isn't deleted, so set the user to be logged in.
+
+                          // This would be an appropriate place to call other functions
+                          // that might set user info that only a logged-in user is going
+                          // to need. Their preferences and saved things or something.
+
+
+                          twfy_debug ("THEUSER init SUCCEEDED", "setting as logged in");
+                          $this->loggedin = true;
+
+                      } elseif (md5 ($this->password()) != $matches[2]) {
+                          twfy_debug ("THEUSER init FAILED", "Password doesn't match cookie");
+                          $this->loggedin = false;
+                      } else {
+                          twfy_debug ("THEUSER init FAILED", "User is deleted");
+                          $this->loggedin = false;
+                      }
                     }
 
                 } else {
@@ -996,6 +1019,43 @@ class THEUSER extends USER {
     }
 
 
+    public function facebook_login($returl="", $expire, $accessToken) {
+        global $PAGE;
+
+        twfy_debug("THEUSER", "Faceook login, user_id " . $this->user_id);
+        twfy_debug("THEUSER", "Faceook login, facebook_id " . $this->facebook_id);
+        twfy_debug("THEUSER", "Faceook login, email" . $this->email);
+        if ($this->facebook_id() == "") {
+            $PAGE->error_message ("We don't have a facebook id for this user.", true);
+
+            return;
+        }
+
+        twfy_debug("THEUSER", "Faceook login, facebook_token: " . $accessToken);
+
+        $q = $this->db->query ("UPDATE users SET facebook_token = :token WHERE email = :email",
+            array(
+                ':token' => $accessToken,
+                ':email' => $this->email
+            ));
+
+        if (!$q->success()) {
+            $PAGE->error_message ("There was a problem logging you in", true);
+            twfy_debug("THEUSER", "Faceook login, failed to set accessToken");
+
+            return false;
+        }
+
+        // facebook login users probably don't have a password
+        $cookie = $this->user_id() . "." . md5 ($accessToken);
+        twfy_debug("THEUSER", "Faceook login, cookie: " . $cookie);
+
+        twfy_debug("USER", "logging in user from facebook " . $this->user_id);
+
+        $this->_login($returl, $expire, $cookie, 'facebook_id');
+        return true;
+    }
+
     public function login($returl="", $expire) {
 
         // This is used to log the user in. Duh.
@@ -1031,28 +1091,26 @@ class THEUSER extends USER {
             return;
         }
 
+        // Reminder: $this->password is actually a hashed version of the plaintext pw.
+        $cookie = $this->user_id() . "." . md5 ($this->password());
+
+        $this->_login($returl, $expire, $cookie);
+    }
+
+    private function _login($returl, $expire, $cookie, $cookie_name = 'epuser_id') {
         // Unset any existing postcode cookie.
         // This will be the postcode the user set for themselves as a non-logged-in
         // user. We don't want it hanging around as it causes confusion.
         $this->unset_postcode_cookie();
 
-        if ($this->facebook_id()) {
-          // facebook login users probably don't have a password
-          $cookie = $this->user_id() . "." . md5 ($this->facebook_id());
-        } else {
-          // Reminder: $this->password is actually a hashed version of the plaintext pw.
-          $cookie = $this->user_id() . "." . md5 ($this->password());
-        }
-
         if ($expire == 'never') {
             header("Location: $returl");
-            setcookie('epuser_id', $cookie, time()+86400*365*20, '/', COOKIEDOMAIN);
+            setcookie($cookie_name, $cookie, time()+86400*365*20, '/', COOKIEDOMAIN);
         } else {
             header("Location: $returl");
-            setcookie('epuser_id', $cookie, 0, '/', COOKIEDOMAIN);
+            setcookie($cookie_name, $cookie, 0, '/', COOKIEDOMAIN);
         }
     }
-
 
 
     public function logout($returl) {

@@ -1105,19 +1105,19 @@ class THEUSER extends USER {
 
         twfy_debug("THEUSER", "expire is " . $expire);
 
+        $cookie_expires = 0;
         if ($expire == 'never') {
-            header("Location: $returl");
             twfy_debug("THEUSER", "cookie never expires");
-            setcookie($cookie_name, $cookie, time()+86400*365*20, '/', COOKIEDOMAIN);
+            $cookie_expires = time()+86400*365*20;
         } elseif (is_int($expire) && $expire > time()) {
-            header("Location: $returl");
             twfy_debug("THEUSER", "cookie expires at " . $expire);
-            setcookie($cookie_name, $cookie, $expire, '/', COOKIEDOMAIN);
+            $cookie_expires = $expire;
         } else {
-            header("Location: $returl");
             twfy_debug("THEUSER", "cookie expires with session");
-            setcookie($cookie_name, $cookie, 0, '/', COOKIEDOMAIN);
         }
+
+        header("Location: $returl");
+        setcookie($cookie_name, $cookie, $cookie_expires, '/', COOKIEDOMAIN);
     }
 
 

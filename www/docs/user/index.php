@@ -1069,7 +1069,7 @@ function display_user($user_id="", $email_changed=false) {
 <?php
         }
 
-        if (isset($video)) {
+        if (isset($video) && $video > 0) {
             echo '<div class="row"><span class="label">Videos timestamped</span>
                 <span class="formw">', $video, '</span></div>';
         }

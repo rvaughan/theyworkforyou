@@ -80,22 +80,27 @@ class FacebookLogin {
         $expires = intval($accessToken->getExpiresAt()->format('U'));
         twfy_debug("THEUSER", "Facebook access token expires at " . $expires);
 
+        $success = False;
         if ($user_id) {
             twfy_debug("THEUSER", "Faceook user exists in the database: " . $user_id);
-            $init_success = $THEUSER->init($user_id);
-            twfy_debug("THEUSER", "user inited: " . $init_success);
+            $success = $THEUSER->init($user_id);
+            twfy_debug("THEUSER", "user inited: " . $success);
             if ($THEUSER->facebook_id() == "") {
                 $THEUSER->add_facebook_id($user['id']);
             }
             twfy_debug("THEUSER", "inited user has id : " . $THEUSER->user_id());
-            $THEUSER->facebook_login("/user/", $expires, $accessToken);
         } else {
             twfy_debug("THEUSER", "Faceook user does not exist in the database");
             $success = $this->createUser($accessToken, $user);
-            $THEUSER->facebook_login("/user/", $expires, $accessToken);
         }
 
-        return false;
+        # this should redirect the user to /user/
+        if ($success) {
+            twfy_debug("THEUSER", "logging in user: " . $THEUSER->user_id());
+            return $THEUSER->facebook_login("/user/", $expires, $accessToken);
+        }
+
+        return False;
     }
 
     public function createUser($accessToken, $user) {

@@ -26,7 +26,11 @@ $this_page = 'topic';
 $data = $login->handleFacebookRedirect();
 
 if (isset($data['token'])) {
-  $login->loginUser($data['token']);
+  $success = $login->loginUser($data['token']);
+  if (!$success) {
+    $data['error'] = 'Could not login using Facebook token';
+    \MySociety\TheyWorkForYou\Renderer::output('login/facebook', $data);
+  }
 } else {
     \MySociety\TheyWorkForYou\Renderer::output('login/facebook', $data);
 }

@@ -88,11 +88,11 @@ class FacebookLogin {
                 $THEUSER->add_facebook_id($user['id']);
             }
             twfy_debug("THEUSER", "inited user has id : " . $THEUSER->user_id());
-            $THEUSER->facebook_login("/", $expires, $accessToken);
+            $THEUSER->facebook_login("/user/", $expires, $accessToken);
         } else {
             twfy_debug("THEUSER", "Faceook user does not exist in the database");
             $success = $this->createUser($accessToken, $user);
-            $THEUSER->facebook_login("/", $expires, $accessToken);
+            $THEUSER->facebook_login("/user/", $expires, $accessToken);
         }
 
         return false;

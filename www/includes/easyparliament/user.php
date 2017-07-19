@@ -827,6 +827,7 @@ class THEUSER extends USER {
 
     // This will become true if all goes well...
     public $loggedin = false;
+    public $facebook_user = false;
 
 
     public function __construct() {
@@ -834,8 +835,6 @@ class THEUSER extends USER {
         // object is instantiated.
 
         $this->db = new ParlDB;
-
-        $facebook_login = False;
 
         // We look at the user's cookie and see if it's valid.
         // If so, we're going to log them in.
@@ -852,7 +851,7 @@ class THEUSER extends USER {
         if ($cookie == '') {
             $cookie = get_cookie_var("facebook_id");
             if ($cookie != '') {
-              $facebook_login = True;
+              $this->facebook_user = True;
               twfy_debug("THEUSER", "is facebook login");
             }
         }
@@ -873,7 +872,7 @@ class THEUSER extends USER {
                     // But we need to check the password before we log them in.
                     // And make sure the user hasn't been "deleted".
 
-                    if ($facebook_login) {
+                    if ($this->facebook_user) {
                       if (md5($this->facebook_token()) == $matches[2] && $this->deleted() == false) {
                           twfy_debug ("THEUSER", "init SUCCESS: setting as logged in");
                           $this->loggedin = true;
@@ -953,6 +952,8 @@ class THEUSER extends USER {
     // For completeness, but it's better to call $this->isloggedin()
     // if you want to check the log in status.
     public function loggedin() { return $this->loggedin; }
+
+    public function facebook_user() { return $this->facebook_user; }
 
 
     public function isloggedin() {

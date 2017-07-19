@@ -40,6 +40,8 @@ class User {
         $data["deleted"] = $user->deleted();
         $data["confirmed"] = $user->confirmed();
         $data["status"] = $user->status();
+        $data["facebook_id"] = $user->facebook_id();
+        $data['facebook_user'] = $user->facebook_user();
 
         $db = new \ParlDB;
         $q = $db->query(

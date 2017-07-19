@@ -16,7 +16,10 @@
             </p>
           <?php } else { ?>
           <p>
-            <strong>This is how other people see you.</strong> <a href="/user/?pg=edit">Edit your details</a>.
+            <strong>This is how other people see you.</strong>
+            <?php if (!$facebook_user) { ?>
+                <a href="/user/?pg=edit">Edit your details</a>.
+            <?php } ?>
           </p>
           <?php } ?>
 

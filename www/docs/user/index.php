@@ -46,6 +46,11 @@ switch (get_http_var("pg")) {
             $data = $user->getUserDetails();
             $data['pg'] = 'edit';
             $this_page = "useredit";
+            if ($THEUSER->facebook_user()) {
+                unset($data['pg']);
+                $template = 'user/index';
+                $this_page = 'userviewself';
+            }
 
         } else {
             $this_page = "userjoin";
@@ -62,6 +67,9 @@ switch (get_http_var("pg")) {
             $data = $user->getUserDetails();
             $this_page = "useredit";
             if (get_http_var('u') != '') {
+                $template = 'user/index';
+                $this_page = 'userviewself';
+            } else if ($THEUSER->facebook_user()) {
                 $template = 'user/index';
                 $this_page = 'userviewself';
             }

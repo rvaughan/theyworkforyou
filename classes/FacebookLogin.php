@@ -76,7 +76,13 @@ class FacebookLogin {
         global $THEUSER;
         $user = $this->getFacebookUser($accessToken);
 
-        $user_id = $THEUSER->email_exists($user['email'], true);
+        // check for FB id first in case they have changed their
+        // email address at the FB end
+        $user_id = $THEUSER->facebook_id_exists($user['id'], true);
+        if (!$user_id) {
+            $user_id = $THEUSER->email_exists($user['email'], true);
+        }
+
         $expires = intval($accessToken->getExpiresAt()->format('U'));
         twfy_debug("THEUSER", "Facebook access token expires at " . $expires);
 
@@ -94,10 +100,16 @@ class FacebookLogin {
             $success = $this->createUser($accessToken, $user);
         }
 
-        # this should redirect the user to /user/
         if ($success) {
             twfy_debug("THEUSER", "logging in user: " . $THEUSER->user_id());
-            return $THEUSER->facebook_login("/user/", $expires, $accessToken);
+            $logged_in = $THEUSER->facebook_login("/user/", $expires, $accessToken);
+
+            if ($THEUSER->email() != $user['email']) {
+                twfy_debug("THEUSER", "updating user details from Facebook");
+                $this->updateUser($user);
+            }
+
+            return $logged_in;
         }
 
         return False;
@@ -128,6 +140,27 @@ class FacebookLogin {
         }
 
         return $added;
+    }
+
+    public function updateUser($user) {
+        global $THEUSER;
+
+        $name_parts = explode(' ', $user['name']);
+        $first_name = array_shift($name_parts);
+        $last_name = implode(' ', $name_parts);
+
+        $details = array(
+            'firstname' => $first_name,
+            'lastname' => $last_name,
+            'email' => $user['email'],
+            'postcode' => $THEUSER->postcode(),
+            'url' => $THEUSER->url(),
+            'optin' => $THEUSER->optin(),
+            'emailpublic' => False,
+            'password' => '',
+         );
+
+        $THEUSER->update_self_no_confirm($details);
     }
 
     public function getFacebookUser($accessToken) {

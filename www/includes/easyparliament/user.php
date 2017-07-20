@@ -564,6 +564,27 @@ class USER {
 
     }
 
+    public function facebook_id_exists($id, $return_id = false) {
+        // Returns true if there's a user with this facebook id.
+
+        if ($id!= "") {
+            $q = $this->db->query("SELECT user_id FROM users WHERE facebook_id = :id", array(':id' => $id));
+            if ($q->rows() > 0) {
+                if ($return_id) {
+                    $row = $q->row(0);
+
+                    return $row['user_id'];
+                }
+
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+    }
 
     public function is_able_to($action) {
         // Call this function to find out if a user is allowed to do something.
@@ -1053,6 +1074,7 @@ class THEUSER extends USER {
 
         twfy_debug("USER", "logging in user from facebook " . $this->user_id);
 
+        $this->loggedin = True;
         $this->_login($returl, $expire, $cookie, 'facebook_id');
         return true;
     }
@@ -1372,6 +1394,53 @@ class THEUSER extends USER {
     public function unset_postcode_cookie() {
         if (!headers_sent()) // if in debug mode
             setcookie (POSTCODE_COOKIE, '', time() - 3600, '/', COOKIEDOMAIN);
+    }
+
+    // mostly here for updating from facebook where we do not need
+    // to confirm the email address
+    public function update_self_no_confirm($details) {
+        global $THEUSER;
+
+        if ($this->isloggedin()) {
+            twfy_debug("THEUSER", "is logged in for update_self");
+
+            // this is checked elsewhere but just in case we check here and
+            // bail out to be on the safe side
+            $email = '';
+            if ( isset($details['email'] ) ) {
+                if ( $details['email'] != $this->email() && $this->email_exists( $details['email'] ) ) {
+                    return false;
+                }
+            }
+
+            $details["user_id"] = $this->user_id;
+
+            $newdetails = $this->_update($details);
+
+            if ($newdetails) {
+                // The user's data was updated, so we'll change the object
+                // variables accordingly.
+
+                $this->firstname        = $newdetails["firstname"];
+                $this->lastname         = $newdetails["lastname"];
+                $this->emailpublic      = $newdetails["emailpublic"];
+                $this->postcode         = $newdetails["postcode"];
+                $this->url              = $newdetails["url"];
+                $this->optin            = $newdetails["optin"];
+                $this->email            = $newdetails['email'];
+                if ($newdetails["password"] != "") {
+                    $this->password = $newdetails["password"];
+                }
+
+                return true;
+            } else {
+                return false;
+            }
+
+        } else {
+            return false;
+        }
+
     }
 
     public function update_self($details, $confirm_email = true) {

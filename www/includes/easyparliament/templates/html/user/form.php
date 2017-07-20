@@ -6,6 +6,34 @@
                 <?php } ?>
 
             <div class="main">
+            <?php if ($facebook_user) { ?>
+              <h1>Edit your details</h1>
+              <form method="post" action="/user/index.php">
+                <?php if (isset($errors['postcode'])) { ?>
+                <p class="error">
+                    <?= $errors['postcode'] ?>
+                </p>
+                <?php } ?>
+
+                <br style="clear: left;">&nbsp;<br>
+                <div class="row">
+                <span class="label"><label for="postcode">Your UK postcode:</label></span>
+                <span class="formw"><input type="text" name="postcode" id="postcode" value="<?= _htmlentities($postcode) ?>" maxlength="10" size="10" class="form"> <small>Optional and not public</small></span>
+                </div>
+
+                <div class="row">
+                <span class="formw">&nbsp;<br><small>Read our <a href="/houserules/" target="_blank">Terms of Use</a>.</small></span>
+                </div>
+
+                <div class="row">
+                <span class="formw"><input type="submit" class="submit" value="Update details"></span>
+                </div>
+
+                <input type="hidden" name="submitted" value="true">
+
+                <input type="hidden" name="pg" value="edit">
+              </form>
+            <?php } else { ?>
               <?php if (isset($showall) && $showall == True && isset($user_id)) { ?>
               <h1>Edit the user&rsquo;s details</h1>
               <?php } else { ?>
@@ -187,6 +215,7 @@
                 <?php } ?>
 
               </form>
+            <?php } ?>
             </div>
             <div class="sidebar">&nbsp;</div>
             <div class="break"></div>

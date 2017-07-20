@@ -17,7 +17,14 @@
           <?php } else { ?>
           <p>
             <strong>This is how other people see you.</strong>
-            <?php if (!$facebook_user) { ?>
+            <?php if ($facebook_user) { ?>
+            </p>
+
+            <p>
+                <a href="/user/?pg=edit">Update your postcode</a> so we can show you information about your representatives.
+            </p>
+
+            <?php } else { ?>
                 <a href="/user/?pg=edit">Edit your details</a>.
             <?php } ?>
           </p>

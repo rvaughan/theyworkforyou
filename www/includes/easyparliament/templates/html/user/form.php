@@ -21,6 +21,10 @@
                 <span class="formw"><input type="text" name="postcode" id="postcode" value="<?= _htmlentities($postcode) ?>" maxlength="10" size="10" class="form"> <small>Optional and not public</small></span>
                 </div>
 
+                <p>
+                We use this to show you information about your MP.
+                </p>
+
                 <div class="row">
                 <span class="formw">&nbsp;<br><small>Read our <a href="/houserules/" target="_blank">Terms of Use</a>.</small></span>
                 </div>
